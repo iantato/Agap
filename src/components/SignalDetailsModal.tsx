@@ -20,20 +20,44 @@ const statusOptions = [
 
 export default function SignalDetailsModal({ isOpen, closeModal, signal }: SignalDetailsModalProps) {
   const [loading, setLoading] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
 
   if (!signal) return null
 
   const handleStatusChange = async (newStatus: string) => {
+    // Don't allow updates to the same status
+    if (newStatus === signal.status) {
+      return
+    }
+
     setLoading(true)
-    const { error } = await supabase
+    setSuccessMessage('')
+    console.log('Updating status to:', newStatus, 'for ID:', signal.id)
+
+    const { data, error } = await supabase
       .from('distress_signals')
       .update({ status: newStatus, updated_at: new Date().toISOString() })
       .eq('id', signal.id)
+      .select()
 
-    setLoading(false)
     if (error) {
       console.error('Error updating status:', error)
-      alert('Failed to update status')
+      alert(`Failed to update status: ${error.message}`)
+      setLoading(false)
+    } else if (!data || data.length === 0) {
+      console.error('Update failed: No data returned. This may indicate an RLS policy issue.')
+      alert('Failed to update status: Permission denied. Check your RLS policies.')
+      setLoading(false)
+    } else {
+      console.log('Update successful:', data)
+      // Show success message
+      setSuccessMessage(`Status updated to ${newStatus.replace('-', ' ')}`)
+
+      // Close modal after short delay to show success message
+      setTimeout(() => {
+        setLoading(false)
+        closeModal()
+      }, 800)
     }
   }
 
@@ -93,7 +117,10 @@ export default function SignalDetailsModal({ isOpen, closeModal, signal }: Signa
                     <label className="block text-sm font-semibold text-gray-400 mb-2">Update Status</label>
                     <Listbox value={signal.status} onChange={handleStatusChange} disabled={loading}>
                       <div className="relative mt-1">
-                        <Listbox.Button className="relative w-full cursor-pointer rounded-xl bg-aura-black py-3 pl-4 pr-10 text-left shadow-sm ring-1 ring-inset ring-gray-700 focus:outline-none focus:ring-2 focus:ring-aura-primary sm:text-sm sm:leading-6">
+                        <Listbox.Button className={clsx(
+                          "relative w-full cursor-pointer rounded-xl bg-aura-black py-3 pl-4 pr-10 text-left shadow-sm ring-1 ring-inset ring-gray-700 focus:outline-none focus:ring-2 focus:ring-aura-primary sm:text-sm sm:leading-6",
+                          loading && "opacity-60 cursor-not-allowed"
+                        )}>
                           <span className={clsx(
                               "block truncate uppercase font-bold",
                               signal.status === 'resolved' ? 'text-green-500' :
@@ -119,9 +146,10 @@ export default function SignalDetailsModal({ isOpen, closeModal, signal }: Signa
                                 className={({ active }) =>
                                   `relative cursor-default select-none py-2.5 pl-10 pr-4 ${
                                     active ? 'bg-gray-800 text-white' : 'text-gray-300'
-                                  }`
+                                  } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`
                                 }
                                 value={option.value}
+                                disabled={loading}
                               >
                                 {({ selected }) => (
                                   <>
@@ -145,6 +173,22 @@ export default function SignalDetailsModal({ isOpen, closeModal, signal }: Signa
                         </Transition>
                       </div>
                     </Listbox>
+
+                    {/* Success Message */}
+                    {successMessage && (
+                      <div className="mt-2 p-3 bg-green-900/30 border border-green-700 rounded-lg flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500" />
+                        <span className="text-sm font-medium text-green-400">{successMessage}</span>
+                      </div>
+                    )}
+
+                    {/* Loading Indicator */}
+                    {loading && (
+                      <div className="mt-2 p-3 bg-blue-900/30 border border-blue-700 rounded-lg flex items-center gap-2">
+                        <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-sm font-medium text-blue-400">Updating status...</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Info Grid */}

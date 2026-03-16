@@ -26,14 +26,14 @@ ALTER TABLE distress_signals ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow read access to all signals" ON distress_signals
     FOR SELECT USING (true);
 
-CREATE POLICY "Allow authenticated responders to update status" ON distress_signals
-    FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow anyone to update status" ON distress_signals
+    FOR UPDATE USING (true);
 
 CREATE POLICY "Allow anyone to insert signals" ON distress_signals
     FOR INSERT WITH CHECK (true);
 
 -- grant permissions
-GRANT SELECT, INSERT ON distress_signals TO anon;
+GRANT SELECT, INSERT, UPDATE ON distress_signals TO anon;
 GRANT ALL PRIVILEGES ON distress_signals TO authenticated;
 
 -- Users Table

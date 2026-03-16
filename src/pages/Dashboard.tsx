@@ -12,12 +12,15 @@ import { useTheme } from '../hooks/useTheme'
 export default function Dashboard() {
   const [signals, setSignals] = useState<DistressSignal[]>([])
   const [totalSignalCount, setTotalSignalCount] = useState(0)
-  const [activeSignal, setActiveSignal] = useState<DistressSignal | null>(null)
+  const [activeSignalId, setActiveSignalId] = useState<string | null>(null)
   const [mapCenter, setMapCenter] = useState<[number, number] | undefined>(undefined)
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const { theme, toggleTheme } = useTheme()
+
+  // Computed active signal based on ID to avoid stale state in closures
+  const activeSignal = signals.find(s => s.id === activeSignalId) || null
 
   useEffect(() => {
     fetchSignals()
@@ -40,11 +43,6 @@ export default function Dashboard() {
             }
           } else if (payload.eventType === 'UPDATE') {
             setSignals(prev => prev.map(s => s.id === payload.new.id ? payload.new as DistressSignal : s))
-
-            // Update active signal if it's currently open
-            if (activeSignal?.id === payload.new.id) {
-                setActiveSignal(payload.new as DistressSignal)
-            }
           }
         }
       )
@@ -53,7 +51,7 @@ export default function Dashboard() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [activeSignal])
+  }, []) // Empty dependency array to prevent re-subscriptions
 
   useEffect(() => {
     voiceSystem.setEnabled(soundEnabled)
@@ -73,7 +71,7 @@ export default function Dashboard() {
   }
 
   const handleSignalClick = (signal: DistressSignal) => {
-    setActiveSignal(signal)
+    setActiveSignalId(signal.id)
     setMapCenter([signal.latitude, signal.longitude])
     setIsModalOpen(true)
   }
@@ -104,7 +102,7 @@ export default function Dashboard() {
                 <ShieldAlert className="h-6 w-6 text-white" />
             </div>
             <div>
-                <h1 className="text-xl font-bold leading-none">Aura Rescue Command</h1>
+                <h1 className="text-xl font-bold leading-none">AGAP Command Center</h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Powered by Agora ConvoAI</p>
             </div>
         </div>
