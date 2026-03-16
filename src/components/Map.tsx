@@ -59,13 +59,19 @@ export default function Map({ signals, onMarkerClick, center }: MapProps) {
       maxBounds={maxBounds}
       maxBoundsViscosity={1.0}
       bounceAtZoomLimits={true}
-      style={{ height: '100%', width: '100%', background: '#0B0E14' }}
-      className="z-0"
+      style={{ height: '100%', width: '100%' }}
+      className="z-0 bg-gray-100 dark:bg-aura-black transition-colors duration-300"
       zoomControl={false}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+        className="block dark:hidden"
+      />
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
         url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        className="hidden dark:block"
       />
       {center && <MapUpdater center={center} />}
       {signals.map((signal) => (
